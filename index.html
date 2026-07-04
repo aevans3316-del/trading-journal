@@ -200,6 +200,42 @@ textarea{resize:vertical;min-height:110px;line-height:1.55}
 .filter-row .fb{font-size:12px;font-weight:600;padding:7px 14px;border-radius:999px;background:var(--panel2);border:1px solid var(--border2);color:var(--muted)}
 .filter-row .fb.on{background:var(--amber-dim);border-color:rgba(240,180,41,.5);color:var(--amber)}
 .hidden{display:none!important}
+
+/* ---------- calendar ---------- */
+.cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.cal-month{font-size:17px;font-weight:800;letter-spacing:-.2px}
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{width:36px;height:36px;border-radius:9px;background:var(--panel2);border:1px solid var(--border2);font-size:15px;font-weight:700;color:var(--muted);transition:all .13s}
+.cal-nav button:hover{color:var(--amber);border-color:rgba(240,180,41,.5)}
+.cal-summary{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);font-weight:600;margin-bottom:16px}
+.cal-summary b{font-weight:800}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-dow{text-align:center;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);padding-bottom:4px}
+.cal-day{
+  min-height:76px;border:1px solid var(--border);border-radius:10px;padding:7px 7px 5px;
+  background:var(--panel2);display:flex;flex-direction:column;gap:2px;transition:all .13s;
+}
+.cal-day.blank{background:transparent;border-color:transparent}
+.cal-day.has{cursor:pointer}
+.cal-day.has:hover{transform:translateY(-1px);border-color:var(--border2)}
+.cal-day .dnum{font-size:11px;font-weight:700;color:var(--dim)}
+.cal-day.today .dnum{color:var(--amber)}
+.cal-day.today{box-shadow:inset 0 0 0 1.5px rgba(240,180,41,.55)}
+.cal-day.day-win{background:var(--green-dim);border-color:rgba(34,197,94,.35)}
+.cal-day.day-win:hover{border-color:rgba(34,197,94,.7)}
+.cal-day.day-loss{background:var(--red-dim);border-color:rgba(239,68,68,.35)}
+.cal-day.day-loss:hover{border-color:rgba(239,68,68,.7)}
+.cal-day.day-be{background:var(--blue-dim);border-color:rgba(96,165,250,.35)}
+.cal-day.day-be:hover{border-color:rgba(96,165,250,.7)}
+.cal-day .dpnl{font-size:12.5px;font-weight:800;letter-spacing:-.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-day .drec{font-size:10px;font-weight:700;color:var(--muted);margin-top:auto}
+@media(max-width:640px){
+  .cal-grid{gap:4px}
+  .cal-day{min-height:58px;padding:5px 4px 4px;border-radius:8px}
+  .cal-day .dpnl{font-size:10px}
+  .cal-day .drec{font-size:8.5px}
+  .cal-day .dnum{font-size:9.5px}
+}
 </style>
 </head>
 <body>
@@ -215,6 +251,7 @@ textarea{resize:vertical;min-height:110px;line-height:1.55}
     </div>
     <button class="nav-btn active" data-nav="dashboard"><span class="ico">📊</span>Dashboard</button>
     <button class="nav-btn" data-nav="trades"><span class="ico">📋</span>Trade Log</button>
+    <button class="nav-btn" data-nav="calendar"><span class="ico">📅</span>Calendar</button>
     <button class="nav-btn" data-nav="new"><span class="ico">➕</span>New Trade</button>
     <button class="nav-btn" data-nav="data"><span class="ico">☁️</span>Sync &amp; Backup</button>
     <div class="sidebar-foot" id="sidebar-sync-note">Connect GitHub sync in Sync &amp; Backup to share your journal between phone &amp; laptop.</div>
@@ -295,6 +332,29 @@ textarea{resize:vertical;min-height:110px;line-height:1.55}
         <button class="fb" data-f="norules">Broke Rules</button>
       </div>
       <div class="card" id="trade-list"></div>
+    </section>
+
+    <!-- ================= CALENDAR ================= -->
+    <section id="view-calendar" class="hidden">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Monthly Calendar</div>
+          <div class="page-sub">Your P&amp;L and results, day by day — tap a day to see its trades</div>
+        </div>
+        <button class="btn btn-primary" onclick="go('new')">＋ Add Trade</button>
+      </div>
+      <div class="card">
+        <div class="cal-head">
+          <div class="cal-month" id="cal-label"></div>
+          <div class="cal-nav">
+            <button onclick="calShift(-1)" title="Previous month">‹</button>
+            <button onclick="calToday()" title="Jump to this month" style="width:auto;padding:0 12px;font-size:11.5px">Today</button>
+            <button onclick="calShift(1)" title="Next month">›</button>
+          </div>
+        </div>
+        <div class="cal-summary" id="cal-summary"></div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
     </section>
 
     <!-- ================= NEW / EDIT TRADE ================= -->
@@ -435,6 +495,7 @@ textarea{resize:vertical;min-height:110px;line-height:1.55}
 <nav class="bottom-nav">
   <button class="active" data-nav="dashboard"><span class="ico">📊</span>Dashboard</button>
   <button data-nav="trades"><span class="ico">📋</span>Trades</button>
+  <button data-nav="calendar"><span class="ico">📅</span>Calendar</button>
   <button data-nav="new"><span class="ico">➕</span>New</button>
   <button data-nav="data"><span class="ico">☁️</span>Sync</button>
 </nav>
@@ -482,11 +543,12 @@ const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 /* =============== nav =============== */
 function go(view){
   document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===view));
-  ['dashboard','trades','new','data'].forEach(v=>{
+  ['dashboard','trades','calendar','new','data'].forEach(v=>{
     document.getElementById('view-'+v).classList.toggle('hidden',v!==view);
   });
   if(view==='dashboard')renderDashboard();
   if(view==='trades')renderTrades();
+  if(view==='calendar')renderCalendar();
   if(view==='new'&&!editingId)resetForm();
   window.scrollTo({top:0});
 }
@@ -619,6 +681,82 @@ function renderTrades(){
   if(activeFilter==='norules')arr=arr.filter(t=>t.rules==='no');
   list.innerHTML=arr.length?'':emptyHtml('Nothing here','No trades match this filter yet.');
   arr.forEach(t=>list.appendChild(tradeRow(t)));
+}
+
+/* =============== calendar =============== */
+const now=new Date();
+let calY=now.getFullYear(),calM=now.getMonth(); // calM is 0-based
+function calShift(d){calM+=d;if(calM<0){calM=11;calY--}if(calM>11){calM=0;calY++}renderCalendar()}
+function calToday(){const n=new Date();calY=n.getFullYear();calM=n.getMonth();renderCalendar()}
+function renderCalendar(){
+  document.getElementById('cal-label').textContent=
+    new Date(calY,calM,1).toLocaleString('en-US',{month:'long',year:'numeric'});
+  // group this month's trades by day of month
+  const byDay={};
+  let mPnl=0,mW=0,mL=0,mB=0,mCount=0;
+  for(const t of trades){
+    if(!t.date)continue;
+    const[y,m,d]=t.date.split('-').map(Number);
+    if(y!==calY||m!==calM+1)continue;
+    const o=byDay[d]=byDay[d]||{pnl:0,hasPnl:false,w:0,l:0,b:0,list:[]};
+    if(typeof t.pnl==='number'){o.pnl+=t.pnl;o.hasPnl=true;mPnl+=t.pnl}
+    if(t.outcome==='win'){o.w++;mW++}else if(t.outcome==='loss'){o.l++;mL++}else{o.b++;mB++}
+    o.list.push(t);mCount++;
+  }
+  document.getElementById('cal-summary').innerHTML=mCount
+    ?`<span>Net: <b class="${mPnl>0?'pos':mPnl<0?'neg':''}">${fmt$(mPnl)}</b></span>
+      <span><b class="pos">${mW}W</b> · <b class="neg">${mL}L</b> · <b class="blu">${mB}BE</b></span>
+      <span><b>${mCount}</b> trade${mCount===1?'':'s'} this month</span>`
+    :'<span>No trades journaled this month yet.</span>';
+  const grid=document.getElementById('cal-grid');
+  grid.innerHTML='';
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>{
+    const h=document.createElement('div');h.className='cal-dow';h.textContent=d;grid.appendChild(h);
+  });
+  const firstDow=new Date(calY,calM,1).getDay();
+  const daysInMonth=new Date(calY,calM+1,0).getDate();
+  const tn=new Date(),isThisMonth=tn.getFullYear()===calY&&tn.getMonth()===calM;
+  for(let i=0;i<firstDow;i++){
+    const c=document.createElement('div');c.className='cal-day blank';grid.appendChild(c);
+  }
+  for(let d=1;d<=daysInMonth;d++){
+    const c=document.createElement('div');
+    const o=byDay[d];
+    let cls='cal-day';
+    if(o){
+      cls+=' has';
+      // color by net P&L; if no P&L recorded, fall back to the W/L record
+      if(o.hasPnl?o.pnl>0:(o.w>o.l&&o.w>0))cls+=' day-win';
+      else if(o.hasPnl?o.pnl<0:(o.l>o.w&&o.l>0))cls+=' day-loss';
+      else cls+=' day-be';
+    }
+    if(isThisMonth&&d===tn.getDate())cls+=' today';
+    c.className=cls;
+    const rec=o?[o.w?o.w+'W':'',o.l?o.l+'L':'',o.b?o.b+'BE':''].filter(Boolean).join(' '):'';
+    c.innerHTML=`<span class="dnum">${d}</span>`
+      +(o&&o.hasPnl?`<span class="dpnl ${o.pnl>0?'pos':o.pnl<0?'neg':'blu'}">${fmt$(o.pnl)}</span>`:'')
+      +(o?`<span class="drec">${rec}</span>`:'');
+    if(o)c.onclick=()=>openDayModal(calY,calM,d,o);
+    grid.appendChild(c);
+  }
+}
+function openDayModal(y,m,d,o){
+  const m2=document.getElementById('detail-modal');
+  const dateLabel=new Date(y,m,d).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  m2.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div style="font-size:17px;font-weight:800">${dateLabel}</div>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="cal-summary" style="margin:10px 0 4px">
+      ${o.hasPnl?`<span>Net: <b class="${o.pnl>0?'pos':o.pnl<0?'neg':''}">${fmt$(o.pnl)}</b></span>`:''}
+      <span><b class="pos">${o.w}W</b> · <b class="neg">${o.l}L</b> · <b class="blu">${o.b}BE</b></span>
+    </div>
+    <div id="day-trade-list"></div>`;
+  const holder=m2.querySelector('#day-trade-list');
+  o.list.forEach(t=>holder.appendChild(tradeRow(t)));
+  document.getElementById('detail-bg').classList.remove('hidden');
+  document.body.style.overflow='hidden';
 }
 
 /* =============== detail modal =============== */
@@ -1032,7 +1170,7 @@ async function doSync(){
   const payload=normalizePayload(merged,del);
   const remotePayload=dataEntry?normalizePayload(remote.trades||[],remote.deleted||{}):null;
   if(payload!==remotePayload)await ghPut('data.json',payload,dataEntry?.sha);
-  if(changedLocally){renderDashboard();renderTrades()}
+  if(changedLocally){renderDashboard();renderTrades();if(!document.getElementById('view-calendar').classList.contains('hidden'))renderCalendar()}
 }
 function normalizePayload(ts,del){
   return JSON.stringify({app:'trading-journal',version:2,
