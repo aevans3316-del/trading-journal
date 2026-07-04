@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#0a0b0e"/>
+<title>Trading Journal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0b0e;--panel:#111318;--panel2:#171a21;--panel3:#1e222b;
+  --border:#22262f;--border2:#2e3340;
+  --text:#e7eaf0;--muted:#8b93a7;--dim:#5a6174;
+  --amber:#f0b429;--amber-dim:rgba(240,180,41,.12);
+  --green:#22c55e;--green-dim:rgba(34,197,94,.12);
+  --red:#ef4444;--red-dim:rgba(239,68,68,.12);
+  --blue:#60a5fa;--blue-dim:rgba(96,165,250,.12);
+  --radius:14px;
+}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;border:none;background:none;font-family:inherit;color:inherit}
+input,textarea,select{
+  width:100%;background:var(--panel2);border:1px solid var(--border2);color:var(--text);
+  font-family:inherit;font-size:15px;border-radius:10px;padding:11px 13px;outline:none;
+  transition:border-color .15s,box-shadow .15s;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(240,180,41,.1)}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.6);cursor:pointer}
+select option{background:var(--panel2)}
+textarea{resize:vertical;min-height:110px;line-height:1.55}
+::placeholder{color:var(--dim)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* ---------- layout ---------- */
+.app{display:flex;min-height:100vh}
+.sidebar{
+  width:220px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);
+  padding:22px 14px;display:flex;flex-direction:column;gap:6px;
+  position:sticky;top:0;height:100vh;
+}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px 20px}
+.brand-icon{width:34px;height:34px;border-radius:9px;background:var(--amber-dim);display:flex;align-items:center;justify-content:center;font-size:17px}
+.brand-name{font-weight:800;font-size:15px;letter-spacing:-.2px}
+.brand-sub{font-size:10.5px;color:var(--muted);font-weight:500}
+.nav-btn{
+  display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;
+  font-size:13.5px;font-weight:600;color:var(--muted);transition:all .15s;text-align:left;width:100%;
+}
+.nav-btn:hover{color:var(--text);background:var(--panel2)}
+.nav-btn.active{color:var(--amber);background:var(--amber-dim)}
+.nav-btn .ico{font-size:16px;width:20px;text-align:center}
+.sidebar-foot{margin-top:auto;padding:8px;font-size:11px;color:var(--dim);line-height:1.5}
+.main{flex:1;min-width:0;padding:28px 32px 100px;max-width:1180px;margin:0 auto}
+.page-title{font-size:24px;font-weight:800;letter-spacing:-.4px;color:var(--amber)}
+.page-sub{font-size:13px;color:var(--muted);margin-top:3px}
+.page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+
+/* mobile nav */
+.bottom-nav{display:none}
+@media(max-width:820px){
+  .sidebar{display:none}
+  .main{padding:18px 14px 96px}
+  .bottom-nav{
+    display:flex;position:fixed;bottom:0;left:0;right:0;z-index:60;
+    background:rgba(17,19,24,.96);backdrop-filter:blur(12px);border-top:1px solid var(--border);
+    padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+  }
+  .bottom-nav button{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:8px 4px;font-size:10.5px;font-weight:600;color:var(--muted);border-radius:10px;
+  }
+  .bottom-nav button.active{color:var(--amber)}
+  .bottom-nav .ico{font-size:19px}
+}
+
+/* ---------- cards & stats ---------- */
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+@media(max-width:980px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-label{font-size:10.5px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;justify-content:space-between}
+.stat-label .chip{width:28px;height:28px;border-radius:8px;background:var(--amber-dim);display:flex;align-items:center;justify-content:center;font-size:13px}
+.stat-value{font-size:26px;font-weight:800;letter-spacing:-.5px;margin-top:10px}
+.stat-note{font-size:11.5px;color:var(--muted);margin-top:5px;font-weight:500}
+.pos{color:var(--green)}.neg{color:var(--red)}.amb{color:var(--amber)}.blu{color:var(--blue)}
+.mini-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:22px}
+@media(max-width:980px){.mini-grid{grid-template-columns:repeat(3,1fr)}}
+.mini{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:13px 8px;text-align:center}
+.mini b{display:block;font-size:17px;font-weight:800}
+.mini span{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.4px;text-transform:uppercase}
+
+.two-col{display:grid;grid-template-columns:1.6fr 1fr;gap:14px}
+@media(max-width:980px){.two-col{grid-template-columns:1fr}}
+.card-title{font-size:14.5px;font-weight:700;display:flex;align-items:center;gap:8px}
+.card-sub{font-size:12px;color:var(--muted);margin-top:2px;margin-bottom:14px}
+
+/* ---------- badges & rows ---------- */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;letter-spacing:.5px;padding:3px 9px;border-radius:6px;text-transform:uppercase}
+.b-win{background:var(--green-dim);color:var(--green)}
+.b-loss{background:var(--red-dim);color:var(--red)}
+.b-be{background:var(--blue-dim);color:var(--blue)}
+.b-long{background:var(--green-dim);color:var(--green)}
+.b-short{background:var(--red-dim);color:var(--red)}
+.b-rules-y{background:var(--green-dim);color:var(--green)}
+.b-rules-n{background:var(--red-dim);color:var(--red)}
+.trade-row{
+  display:flex;align-items:center;gap:12px;padding:14px 6px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .12s;border-radius:8px;
+}
+.trade-row:hover{background:var(--panel2)}
+.trade-row:last-child{border-bottom:none}
+.trade-sym{font-weight:700;font-size:14px;min-width:64px}
+.trade-meta{font-size:11.5px;color:var(--muted)}
+.trade-pnl{margin-left:auto;font-weight:700;font-size:14px;text-align:right;white-space:nowrap}
+.trade-thumb{width:34px;height:34px;border-radius:7px;object-fit:cover;border:1px solid var(--border2);flex-shrink:0}
+.cam-dot{font-size:13px;opacity:.7}
+
+/* ---------- form ---------- */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.form-grid{grid-template-columns:1fr}}
+.field label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.field{margin-bottom:16px}
+.seg{display:flex;gap:5px;background:var(--panel2);border:1px solid var(--border2);border-radius:11px;padding:5px}
+.seg button{flex:1;padding:11px 8px;border-radius:8px;font-size:13.5px;font-weight:700;color:var(--muted);transition:all .13s}
+.seg button:active{transform:scale(.97)}
+.seg button.sel-win{background:var(--green-dim);color:var(--green);box-shadow:inset 0 0 0 1px rgba(34,197,94,.4)}
+.seg button.sel-loss{background:var(--red-dim);color:var(--red);box-shadow:inset 0 0 0 1px rgba(239,68,68,.4)}
+.seg button.sel-be{background:var(--blue-dim);color:var(--blue);box-shadow:inset 0 0 0 1px rgba(96,165,250,.4)}
+.seg button.sel-long{background:var(--green-dim);color:var(--green)}
+.seg button.sel-short{background:var(--red-dim);color:var(--red)}
+.seg button.sel-yes{background:var(--green-dim);color:var(--green);box-shadow:inset 0 0 0 1px rgba(34,197,94,.4)}
+.seg button.sel-no{background:var(--red-dim);color:var(--red);box-shadow:inset 0 0 0 1px rgba(239,68,68,.4)}
+.emo-wrap{display:flex;flex-wrap:wrap;gap:7px}
+.emo{
+  font-size:12px;font-weight:600;padding:7px 13px;border-radius:999px;
+  background:var(--panel2);border:1px solid var(--border2);color:var(--muted);transition:all .13s;
+}
+.emo.on{background:var(--amber-dim);border-color:rgba(240,180,41,.5);color:var(--amber)}
+.drop-zone{
+  border:1.5px dashed var(--border2);border-radius:12px;padding:26px 16px;text-align:center;
+  cursor:pointer;transition:all .15s;color:var(--muted);font-size:13px;
+}
+.drop-zone:hover,.drop-zone.over{border-color:var(--amber);background:var(--amber-dim);color:var(--amber)}
+.drop-zone b{color:var(--amber)}
+.shots{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.shot{position:relative}
+.shot img{width:92px;height:92px;object-fit:cover;border-radius:10px;border:1px solid var(--border2)}
+.shot .rm{
+  position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;
+  background:var(--red);color:#fff;font-size:12px;font-weight:700;line-height:22px;text-align:center;
+}
+.btn{
+  display:inline-flex;align-items:center;gap:7px;padding:11px 20px;border-radius:10px;
+  font-size:13.5px;font-weight:700;transition:all .15s;
+}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--amber);color:#151002}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-ghost{background:var(--panel2);border:1px solid var(--border2);color:var(--text)}
+.btn-ghost:hover{border-color:var(--border2);background:var(--panel3)}
+.btn-danger{background:var(--red-dim);color:var(--red)}
+.btn-sm{padding:8px 14px;font-size:12.5px}
+
+/* ---------- modal ---------- */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(5,6,8,.72);backdrop-filter:blur(4px);z-index:80;
+  display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow-y:auto;
+}
+.modal{
+  background:var(--panel);border:1px solid var(--border2);border-radius:16px;
+  width:100%;max-width:640px;padding:24px;margin:auto 0;
+  animation:pop .18s cubic-bezier(.22,1,.36,1);
+}
+@keyframes pop{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
+.detail-img{width:100%;border-radius:12px;border:1px solid var(--border2);margin-top:10px;cursor:zoom-in}
+.lightbox{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:16px;cursor:zoom-out}
+.lightbox img{max-width:100%;max-height:100%;border-radius:8px}
+.notes-block{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:14px;line-height:1.6;white-space:pre-wrap;margin-top:6px}
+.kv{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+.kv:last-child{border:none}
+.kv span:first-child{color:var(--muted);font-weight:600}
+.kv span:last-child{font-weight:700}
+
+/* chart */
+.chart-wrap{margin-top:6px}
+.empty{
+  text-align:center;padding:44px 16px;color:var(--muted);font-size:13.5px;line-height:1.7;
+}
+.empty .big{font-size:34px;display:block;margin-bottom:8px}
+.toast{
+  position:fixed;bottom:88px;left:50%;transform:translateX(-50%);z-index:120;
+  background:var(--panel3);border:1px solid var(--border2);color:var(--text);
+  padding:11px 20px;border-radius:11px;font-size:13.5px;font-weight:600;
+  box-shadow:0 8px 30px rgba(0,0,0,.5);animation:pop .2s ease;
+}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.filter-row .fb{font-size:12px;font-weight:600;padding:7px 14px;border-radius:999px;background:var(--panel2);border:1px solid var(--border2);color:var(--muted)}
+.filter-row .fb.on{background:var(--amber-dim);border-color:rgba(240,180,41,.5);color:var(--amber)}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">📒</div>
+      <div>
+        <div class="brand-name">TradeJournal</div>
+        <div class="brand-sub">Personal Journal</div>
+      </div>
+    </div>
+    <button class="nav-btn active" data-nav="dashboard"><span class="ico">📊</span>Dashboard</button>
+    <button class="nav-btn" data-nav="trades"><span class="ico">📋</span>Trade Log</button>
+    <button class="nav-btn" data-nav="new"><span class="ico">➕</span>New Trade</button>
+    <button class="nav-btn" data-nav="data"><span class="ico">☁️</span>Sync &amp; Backup</button>
+    <div class="sidebar-foot" id="sidebar-sync-note">Connect GitHub sync in Sync &amp; Backup to share your journal between phone &amp; laptop.</div>
+  </aside>
+
+  <main class="main">
+
+    <!-- ================= DASHBOARD ================= -->
+    <section id="view-dashboard">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Trading Dashboard</div>
+          <div class="page-sub">Track your performance and analyze your trades</div>
+        </div>
+        <button class="btn btn-primary" onclick="go('new')">＋ Add Trade</button>
+      </div>
+
+      <div class="stat-grid">
+        <div class="card">
+          <div class="stat-label">Win Rate <span class="chip">🎯</span></div>
+          <div class="stat-value amb" id="st-winrate">–</div>
+          <div class="stat-note" id="st-winrate-note">breakevens excluded</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">Total P&amp;L <span class="chip">💰</span></div>
+          <div class="stat-value" id="st-pnl">$0.00</div>
+          <div class="stat-note" id="st-pnl-note">across all trades</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">Total Trades <span class="chip">📈</span></div>
+          <div class="stat-value" id="st-total">0</div>
+          <div class="stat-note">positions tracked</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">Rules Followed <span class="chip">✅</span></div>
+          <div class="stat-value" id="st-rules">–</div>
+          <div class="stat-note" id="st-rules-note">discipline score</div>
+        </div>
+      </div>
+
+      <div class="mini-grid">
+        <div class="mini"><b class="pos" id="m-wins">0</b><span>Wins</span></div>
+        <div class="mini"><b class="neg" id="m-losses">0</b><span>Losses</span></div>
+        <div class="mini"><b class="blu" id="m-be">0</b><span>Breakeven</span></div>
+        <div class="mini"><b class="pos" id="m-avgwin">$0</b><span>Avg Win</span></div>
+        <div class="mini"><b class="neg" id="m-avgloss">$0</b><span>Avg Loss</span></div>
+        <div class="mini"><b class="amb" id="m-streak">0</b><span>Streak</span></div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">📈 Equity Curve</div>
+          <div class="card-sub">Cumulative P&amp;L progression</div>
+          <div class="chart-wrap" id="equity-chart"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🕑 Recent Trades</div>
+          <div class="card-sub">Your latest activity</div>
+          <div id="recent-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TRADE LOG ================= -->
+    <section id="view-trades" class="hidden">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Trade Log</div>
+          <div class="page-sub">Every trade you've journaled — tap one to review it</div>
+        </div>
+        <button class="btn btn-primary" onclick="go('new')">＋ Add Trade</button>
+      </div>
+      <div class="filter-row" id="filters">
+        <button class="fb on" data-f="all">All</button>
+        <button class="fb" data-f="win">Wins</button>
+        <button class="fb" data-f="loss">Losses</button>
+        <button class="fb" data-f="be">Breakeven</button>
+        <button class="fb" data-f="norules">Broke Rules</button>
+      </div>
+      <div class="card" id="trade-list"></div>
+    </section>
+
+    <!-- ================= NEW / EDIT TRADE ================= -->
+    <section id="view-new" class="hidden">
+      <div class="page-head">
+        <div>
+          <div class="page-title" id="form-title">New Trade</div>
+          <div class="page-sub">Log the trade, your rules, and how you felt</div>
+        </div>
+      </div>
+
+      <div class="card" style="max-width:760px">
+        <div class="form-grid">
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="f-date"/>
+          </div>
+          <div class="field">
+            <label>Symbol / Pair</label>
+            <input type="text" id="f-symbol" placeholder="e.g. MNQ, ES, EUR/USD" autocapitalize="characters"/>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label>Direction</label>
+            <div class="seg" id="f-side">
+              <button data-v="long">▲ Long</button>
+              <button data-v="short">▼ Short</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>P&amp;L ($) <span style="text-transform:none;font-weight:500">— optional</span></label>
+            <input type="number" id="f-pnl" step="any" inputmode="decimal" placeholder="e.g. 245 or -120"/>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Result</label>
+          <div class="seg" id="f-outcome">
+            <button data-v="win">✓ Win</button>
+            <button data-v="loss">✗ Loss</button>
+            <button data-v="be">◎ Breakeven</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Did you follow your trading rules?</label>
+          <div class="seg" id="f-rules">
+            <button data-v="yes">👍 Yes, followed my rules</button>
+            <button data-v="no">👎 No, broke my rules</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>How did you feel during the trade?</label>
+          <div class="emo-wrap" id="f-emotions"></div>
+        </div>
+
+        <div class="field">
+          <label>Journal — thoughts &amp; reflections</label>
+          <textarea id="f-notes" placeholder="What was your plan? What did you see? How did you feel entering, managing, and exiting? What would you do differently?"></textarea>
+        </div>
+
+        <div class="field">
+          <label>Screenshots &amp; Charts</label>
+          <div class="drop-zone" id="drop-zone">
+            <div style="font-size:22px;margin-bottom:6px">📷</div>
+            Drop a chart screenshot here, <b>tap to browse</b>,<br/>or paste one with Ctrl/Cmd+V
+            <div style="font-size:11px;margin-top:6px;opacity:.7">On your phone this opens your camera roll</div>
+          </div>
+          <input type="file" id="f-file" accept="image/*" multiple style="display:none"/>
+          <div class="shots" id="f-shots"></div>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px">
+          <button class="btn btn-ghost" onclick="resetForm();go('dashboard')">Cancel</button>
+          <button class="btn btn-primary" id="save-btn" onclick="saveTrade()">💾 Save Trade</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SYNC & BACKUP ================= -->
+    <section id="view-data" class="hidden">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Sync &amp; Backup</div>
+          <div class="page-sub">Keep your phone and laptop on the same journal with GitHub sync</div>
+        </div>
+      </div>
+
+      <div class="card" style="max-width:640px;margin-bottom:14px">
+        <div class="card-title">☁️ GitHub Sync</div>
+        <div id="sync-setup">
+          <div class="card-sub">Your trades and screenshots are saved to a <b>private</b> GitHub repository, so every device that connects with your token sees the same journal. Create a token at <b>github.com → Settings → Developer settings → Personal access tokens (classic)</b> with the <b>repo</b> scope, then paste it here. Do this once on each device.</div>
+          <div class="field">
+            <label>GitHub personal access token</label>
+            <input type="password" id="sync-token" placeholder="ghp_..." autocomplete="off"/>
+          </div>
+          <div class="field">
+            <label>Data repository name</label>
+            <input type="text" id="sync-repo" value="trading-journal-data" autocomplete="off"/>
+            <div style="font-size:11.5px;color:var(--dim);margin-top:6px">If this repo doesn't exist yet it will be created as private automatically.</div>
+          </div>
+          <button class="btn btn-primary" id="sync-connect-btn" onclick="connectSync()">🔗 Connect</button>
+        </div>
+        <div id="sync-connected" class="hidden">
+          <div class="card-sub" id="sync-info"></div>
+          <div id="sync-status" style="font-size:13px;font-weight:600;margin-bottom:14px"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary btn-sm" onclick="syncNow()">🔄 Sync now</button>
+            <button class="btn btn-ghost btn-sm" onclick="disconnectSync()">Disconnect this device</button>
+          </div>
+          <div style="font-size:11.5px;color:var(--dim);margin-top:12px">Syncs automatically when you open the app and whenever you save or delete a trade. Your token is stored only in this browser — treat it like a password.</div>
+        </div>
+      </div>
+
+      <div class="card" style="max-width:640px">
+        <div class="card-title">💾 Export</div>
+        <div class="card-sub">Offline backup: downloads a single file with every trade and screenshot.</div>
+        <button class="btn btn-primary" onclick="exportData()">⬇ Export backup file</button>
+        <div style="height:26px"></div>
+        <div class="card-title">📥 Import</div>
+        <div class="card-sub">Load a backup file exported from your other device. Adds any trades you don't already have.</div>
+        <button class="btn btn-ghost" onclick="document.getElementById('import-file').click()">⬆ Import backup file</button>
+        <input type="file" id="import-file" accept=".json,application/json" style="display:none"/>
+        <div style="height:26px"></div>
+        <div class="card-title">🗑 Danger Zone</div>
+        <div class="card-sub">Permanently delete every trade and screenshot on this device.</div>
+        <button class="btn btn-danger" onclick="wipeAll()">Delete all data</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- mobile bottom nav -->
+<nav class="bottom-nav">
+  <button class="active" data-nav="dashboard"><span class="ico">📊</span>Dashboard</button>
+  <button data-nav="trades"><span class="ico">📋</span>Trades</button>
+  <button data-nav="new"><span class="ico">➕</span>New</button>
+  <button data-nav="data"><span class="ico">☁️</span>Sync</button>
+</nav>
+
+<!-- trade detail modal -->
+<div class="modal-bg hidden" id="detail-bg" onclick="if(event.target===this)closeDetail()">
+  <div class="modal" id="detail-modal"></div>
+</div>
+<div class="lightbox hidden" id="lightbox" onclick="this.classList.add('hidden')"><img id="lightbox-img"/></div>
+
+<script>
+/* =============== storage =============== */
+const LS_KEY='tj2_trades';
+let trades=[]; try{trades=JSON.parse(localStorage.getItem(LS_KEY)||'[]')}catch(e){trades=[]}
+function persist(){localStorage.setItem(LS_KEY,JSON.stringify(trades))}
+
+/* IndexedDB for screenshots (bigger capacity than localStorage) */
+let idb=null;
+const idbReady=new Promise(res=>{
+  const rq=indexedDB.open('tj2_images',1);
+  rq.onupgradeneeded=e=>e.target.result.createObjectStore('images');
+  rq.onsuccess=e=>{idb=e.target.result;res()};
+  rq.onerror=()=>res(); // still works without images
+});
+function imgPut(id,dataUrl){return idbReady.then(()=>new Promise(res=>{
+  if(!idb)return res();
+  const tx=idb.transaction('images','readwrite');
+  tx.objectStore('images').put(dataUrl,id);
+  tx.oncomplete=res;tx.onerror=res;
+}))}
+function imgGet(id){return idbReady.then(()=>new Promise(res=>{
+  if(!idb)return res(null);
+  const rq=idb.transaction('images').objectStore('images').get(id);
+  rq.onsuccess=()=>res(rq.result||null);rq.onerror=()=>res(null);
+}))}
+function imgDel(id){return idbReady.then(()=>new Promise(res=>{
+  if(!idb)return res();
+  const tx=idb.transaction('images','readwrite');
+  tx.objectStore('images').delete(id);
+  tx.oncomplete=res;tx.onerror=res;
+}))}
+
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+
+/* =============== nav =============== */
+function go(view){
+  document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===view));
+  ['dashboard','trades','new','data'].forEach(v=>{
+    document.getElementById('view-'+v).classList.toggle('hidden',v!==view);
+  });
+  if(view==='dashboard')renderDashboard();
+  if(view==='trades')renderTrades();
+  if(view==='new'&&!editingId)resetForm();
+  window.scrollTo({top:0});
+}
+document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>{
+  if(b.dataset.nav==='new')editingId=null;
+  go(b.dataset.nav);
+}));
+
+/* =============== stats =============== */
+function computeStats(){
+  const wins=trades.filter(t=>t.outcome==='win');
+  const losses=trades.filter(t=>t.outcome==='loss');
+  const bes=trades.filter(t=>t.outcome==='be');
+  const decided=wins.length+losses.length; // breakevens excluded from win rate
+  const winRate=decided?wins.length/decided*100:null;
+  const pnl=trades.reduce((s,t)=>s+(t.pnl||0),0);
+  const rulesKnown=trades.filter(t=>t.rules==='yes'||t.rules==='no');
+  const rulesPct=rulesKnown.length?rulesKnown.filter(t=>t.rules==='yes').length/rulesKnown.length*100:null;
+  const winsWithPnl=wins.filter(t=>typeof t.pnl==='number');
+  const lossesWithPnl=losses.filter(t=>typeof t.pnl==='number');
+  const avgWin=winsWithPnl.length?winsWithPnl.reduce((s,t)=>s+t.pnl,0)/winsWithPnl.length:0;
+  const avgLoss=lossesWithPnl.length?lossesWithPnl.reduce((s,t)=>s+t.pnl,0)/lossesWithPnl.length:0;
+  // current streak on most recent decided trades
+  let streak=0,streakType='';
+  const sorted=[...trades].sort((a,b)=>b.date.localeCompare(a.date)||b.created-a.created);
+  for(const t of sorted){
+    if(t.outcome==='be')continue;
+    if(!streakType){streakType=t.outcome;streak=1}
+    else if(t.outcome===streakType)streak++;
+    else break;
+  }
+  return{wins:wins.length,losses:losses.length,bes:bes.length,winRate,pnl,rulesPct,avgWin,avgLoss,streak,streakType};
+}
+const fmt$=n=>(n<0?'-':'+')+'$'+Math.abs(n).toFixed(2);
+
+/* =============== dashboard =============== */
+function renderDashboard(){
+  const s=computeStats();
+  document.getElementById('st-winrate').textContent=s.winRate===null?'–':s.winRate.toFixed(1)+'%';
+  document.getElementById('st-winrate-note').textContent=`${s.wins}W / ${s.losses}L — breakevens excluded`;
+  const pnlEl=document.getElementById('st-pnl');
+  pnlEl.textContent=fmt$(s.pnl);
+  pnlEl.className='stat-value '+(s.pnl>0?'pos':s.pnl<0?'neg':'');
+  document.getElementById('st-total').textContent=trades.length;
+  const rEl=document.getElementById('st-rules');
+  rEl.textContent=s.rulesPct===null?'–':s.rulesPct.toFixed(0)+'%';
+  rEl.className='stat-value '+(s.rulesPct===null?'':s.rulesPct>=80?'pos':s.rulesPct>=50?'amb':'neg');
+  document.getElementById('st-rules-note').textContent=s.rulesPct===null?'no trades yet':(s.rulesPct>=80?'great discipline 💪':s.rulesPct>=50?'room to tighten up':'discipline needs work');
+  document.getElementById('m-wins').textContent=s.wins;
+  document.getElementById('m-losses').textContent=s.losses;
+  document.getElementById('m-be').textContent=s.bes;
+  document.getElementById('m-avgwin').textContent='$'+s.avgWin.toFixed(0);
+  document.getElementById('m-avgloss').textContent='$'+Math.abs(s.avgLoss).toFixed(0);
+  const stEl=document.getElementById('m-streak');
+  stEl.textContent=s.streak?(s.streak+(s.streakType==='win'?'W':'L')):'0';
+  stEl.className=s.streakType==='loss'?'neg':s.streakType==='win'?'pos':'amb';
+  renderEquity();
+  // recent
+  const recent=[...trades].sort((a,b)=>b.date.localeCompare(a.date)||b.created-a.created).slice(0,6);
+  const rl=document.getElementById('recent-list');
+  rl.innerHTML=recent.length?'':emptyHtml('No trades yet','Hit “Add Trade” to journal your first one.');
+  recent.forEach(t=>rl.appendChild(tradeRow(t)));
+}
+function emptyHtml(title,sub){return `<div class="empty"><span class="big">🌱</span><b>${title}</b><br/>${sub}</div>`}
+
+function renderEquity(){
+  const el=document.getElementById('equity-chart');
+  const pts=[...trades].filter(t=>typeof t.pnl==='number')
+    .sort((a,b)=>a.date.localeCompare(b.date)||a.created-b.created);
+  if(pts.length<2){el.innerHTML=emptyHtml('Not enough data','Add P&amp;L on a couple of trades to see your curve.');return}
+  let cum=0;const vals=[0,...pts.map(t=>cum+=t.pnl)];
+  const W=560,H=190,P=10;
+  const min=Math.min(...vals),max=Math.max(...vals),span=(max-min)||1;
+  const X=i=>P+i/(vals.length-1)*(W-2*P);
+  const Y=v=>H-P-(v-min)/span*(H-2*P);
+  const line=vals.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+  const area=`${P},${Y(vals[0]).toFixed(1)} ${line} ${W-P},${H-P} ${P},${H-P}`;
+  const zero=(min<0&&max>0)?`<line x1="${P}" y1="${Y(0)}" x2="${W-P}" y2="${Y(0)}" stroke="#2e3340" stroke-dasharray="4 4"/>`:'';
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" preserveAspectRatio="none">
+    <defs><linearGradient id="eg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0b429" stop-opacity=".28"/>
+      <stop offset="100%" stop-color="#f0b429" stop-opacity="0"/>
+    </linearGradient></defs>
+    ${zero}
+    <polygon points="${area}" fill="url(#eg)"/>
+    <polyline points="${line}" fill="none" stroke="#f0b429" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>
+  <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:6px">
+    <span>${pts[0].date}</span>
+    <span style="font-weight:700;color:${cum>=0?'var(--green)':'var(--red)'}">Total: ${fmt$(cum)}</span>
+    <span>${pts[pts.length-1].date}</span>
+  </div>`;
+}
+
+/* =============== trade rows & log =============== */
+function outcomeBadge(o){
+  return o==='win'?'<span class="badge b-win">Win</span>'
+    :o==='loss'?'<span class="badge b-loss">Loss</span>'
+    :'<span class="badge b-be">B/E</span>';
+}
+function tradeRow(t){
+  const row=document.createElement('div');
+  row.className='trade-row';
+  const pnlHtml=typeof t.pnl==='number'
+    ?`<span class="${t.pnl>0?'pos':t.pnl<0?'neg':''}">${fmt$(t.pnl)}</span>`:'<span style="color:var(--dim)">—</span>';
+  row.innerHTML=`
+    <div>
+      <div class="trade-sym">${esc(t.symbol||'—')}</div>
+      <div class="trade-meta">${t.date}</div>
+    </div>
+    ${outcomeBadge(t.outcome)}
+    <span class="badge ${t.side==='long'?'b-long':'b-short'}">${t.side==='long'?'▲ Long':'▼ Short'}</span>
+    ${t.rules==='no'?'<span class="badge b-rules-n" title="Broke rules">⚠ rules</span>':''}
+    ${t.images&&t.images.length?'<span class="cam-dot">📷</span>':''}
+    <div class="trade-pnl">${pnlHtml}</div>`;
+  row.addEventListener('click',()=>openDetail(t.id));
+  return row;
+}
+let activeFilter='all';
+document.getElementById('filters').addEventListener('click',e=>{
+  const b=e.target.closest('.fb');if(!b)return;
+  activeFilter=b.dataset.f;
+  document.querySelectorAll('#filters .fb').forEach(x=>x.classList.toggle('on',x===b));
+  renderTrades();
+});
+function renderTrades(){
+  const list=document.getElementById('trade-list');
+  let arr=[...trades].sort((a,b)=>b.date.localeCompare(a.date)||b.created-a.created);
+  if(activeFilter==='win'||activeFilter==='loss'||activeFilter==='be')arr=arr.filter(t=>t.outcome===activeFilter);
+  if(activeFilter==='norules')arr=arr.filter(t=>t.rules==='no');
+  list.innerHTML=arr.length?'':emptyHtml('Nothing here','No trades match this filter yet.');
+  arr.forEach(t=>list.appendChild(tradeRow(t)));
+}
+
+/* =============== detail modal =============== */
+const EMOJI={confident:'😎',anxious:'😰',excited:'🤩',fearful:'😨',greedy:'🤑',patient:'🧘',impulsive:'⚡',frustrated:'😤',calm:'😌',focused:'🎯',doubtful:'🤔',disciplined:'📏','revenge-trading':'😡',fomo:'🏃',bored:'🥱',overconfident:'🦁'};
+async function openDetail(id){
+  const t=trades.find(x=>x.id===id);if(!t)return;
+  const m=document.getElementById('detail-modal');
+  const emoHtml=(t.emotions||[]).map(e=>`<span class="emo on" style="cursor:default">${EMOJI[e]||''} ${esc(e)}</span>`).join(' ')||'<span style="color:var(--dim);font-size:13px">none recorded</span>';
+  m.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div style="font-size:20px;font-weight:800">${esc(t.symbol||'Trade')}</div>
+      ${outcomeBadge(t.outcome)}
+      <span class="badge ${t.side==='long'?'b-long':'b-short'}">${t.side==='long'?'▲ Long':'▼ Short'}</span>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="closeDetail()">✕</button>
+    </div>
+    <div style="margin-top:14px">
+      <div class="kv"><span>Date</span><span>${t.date}</span></div>
+      <div class="kv"><span>P&amp;L</span><span class="${typeof t.pnl==='number'?(t.pnl>0?'pos':t.pnl<0?'neg':''):''}">${typeof t.pnl==='number'?fmt$(t.pnl):'—'}</span></div>
+      <div class="kv"><span>Followed rules</span><span>${t.rules==='yes'?'<span class="badge b-rules-y">✓ Yes</span>':t.rules==='no'?'<span class="badge b-rules-n">✗ No</span>':'—'}</span></div>
+    </div>
+    <div style="margin-top:14px">
+      <div style="font-size:11.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Emotions during trade</div>
+      <div class="emo-wrap">${emoHtml}</div>
+    </div>
+    <div style="margin-top:14px">
+      <div style="font-size:11.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)">Journal</div>
+      <div class="notes-block">${t.notes?esc(t.notes):'<span style="color:var(--dim)">No notes written.</span>'}</div>
+    </div>
+    <div id="detail-imgs"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+      <button class="btn btn-danger btn-sm" onclick="deleteTrade('${t.id}')">🗑 Delete</button>
+      <button class="btn btn-ghost btn-sm" onclick="editTrade('${t.id}')">✏️ Edit</button>
+    </div>`;
+  document.getElementById('detail-bg').classList.remove('hidden');
+  document.body.style.overflow='hidden';
+  const holder=m.querySelector('#detail-imgs');
+  for(const imgId of (t.images||[])){
+    const data=await imgGet(imgId);
+    if(data){
+      const img=document.createElement('img');
+      img.src=data;img.className='detail-img';
+      img.onclick=()=>{document.getElementById('lightbox-img').src=data;document.getElementById('lightbox').classList.remove('hidden')};
+      holder.appendChild(img);
+    }
+  }
+}
+function closeDetail(){document.getElementById('detail-bg').classList.add('hidden');document.body.style.overflow=''}
+async function deleteTrade(id){
+  if(!confirm('Delete this trade? This cannot be undone.'))return;
+  const t=trades.find(x=>x.id===id);
+  for(const imgId of (t?.images||[]))await imgDel(imgId);
+  trades=trades.filter(x=>x.id!==id);
+  tombstones[id]=Date.now();persistTombstones();
+  persist();closeDetail();renderDashboard();renderTrades();toast('Trade deleted');
+  queueSync();
+}
+
+/* =============== form =============== */
+const EMOTIONS=Object.keys(EMOJI);
+let editingId=null;
+let formShots=[]; // {id, dataUrl}
+const state={side:'long',outcome:null,rules:null,emotions:new Set()};
+
+const emoWrap=document.getElementById('f-emotions');
+EMOTIONS.forEach(e=>{
+  const b=document.createElement('button');
+  b.className='emo';b.textContent=`${EMOJI[e]} ${e}`;b.dataset.e=e;
+  b.onclick=()=>{state.emotions.has(e)?state.emotions.delete(e):state.emotions.add(e);b.classList.toggle('on')};
+  emoWrap.appendChild(b);
+});
+
+function bindSeg(id,key,classPrefix){
+  const seg=document.getElementById(id);
+  seg.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    state[key]=b.dataset.v;
+    seg.querySelectorAll('button').forEach(x=>x.className='');
+    b.className='sel-'+b.dataset.v;
+  });
+}
+bindSeg('f-side','side');
+bindSeg('f-outcome','outcome');
+bindSeg('f-rules','rules');
+
+function setSeg(id,key,val){
+  const seg=document.getElementById(id);
+  state[key]=val;
+  seg.querySelectorAll('button').forEach(x=>x.className=x.dataset.v===val?'sel-'+val:'');
+}
+
+function resetForm(){
+  editingId=null;formShots=[];
+  document.getElementById('form-title').textContent='New Trade';
+  document.getElementById('save-btn').innerHTML='💾 Save Trade';
+  document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('f-symbol').value='';
+  document.getElementById('f-pnl').value='';
+  document.getElementById('f-notes').value='';
+  setSeg('f-side','side','long');
+  setSeg('f-outcome','outcome',null);
+  setSeg('f-rules','rules',null);
+  state.emotions=new Set();
+  emoWrap.querySelectorAll('.emo').forEach(b=>b.classList.remove('on'));
+  renderShots();
+}
+
+async function editTrade(id){
+  const t=trades.find(x=>x.id===id);if(!t)return;
+  closeDetail();
+  editingId=id;
+  go('new');
+  document.getElementById('form-title').textContent='Edit Trade';
+  document.getElementById('save-btn').innerHTML='💾 Update Trade';
+  document.getElementById('f-date').value=t.date;
+  document.getElementById('f-symbol').value=t.symbol||'';
+  document.getElementById('f-pnl').value=typeof t.pnl==='number'?t.pnl:'';
+  document.getElementById('f-notes').value=t.notes||'';
+  setSeg('f-side','side',t.side);
+  setSeg('f-outcome','outcome',t.outcome);
+  setSeg('f-rules','rules',t.rules);
+  state.emotions=new Set(t.emotions||[]);
+  emoWrap.querySelectorAll('.emo').forEach(b=>b.classList.toggle('on',state.emotions.has(b.dataset.e)));
+  formShots=[];
+  for(const imgId of (t.images||[])){
+    const data=await imgGet(imgId);
+    if(data)formShots.push({id:imgId,dataUrl:data});
+  }
+  renderShots();
+}
+
+/* images: browse / drag-drop / paste. Downscale big phone screenshots. */
+const dz=document.getElementById('drop-zone'),fileInput=document.getElementById('f-file');
+dz.onclick=()=>fileInput.click();
+fileInput.onchange=()=>{addFiles(fileInput.files);fileInput.value=''};
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');addFiles(e.dataTransfer.files)});
+document.addEventListener('paste',e=>{
+  if(document.getElementById('view-new').classList.contains('hidden'))return;
+  const items=[...(e.clipboardData?.items||[])].filter(i=>i.type.startsWith('image/'));
+  if(items.length)addFiles(items.map(i=>i.getAsFile()).filter(Boolean));
+});
+function addFiles(files){
+  [...files].forEach(f=>{
+    if(!f||!f.type.startsWith('image/'))return;
+    const reader=new FileReader();
+    reader.onload=()=>downscale(reader.result,1600,d=>{
+      formShots.push({id:uid(),dataUrl:d});renderShots();
+    });
+    reader.readAsDataURL(f);
+  });
+}
+function downscale(dataUrl,maxDim,cb){
+  const img=new Image();
+  img.onload=()=>{
+    let{width:w,height:h}=img;
+    if(w<=maxDim&&h<=maxDim&&dataUrl.length<900000)return cb(dataUrl);
+    const scale=Math.min(1,maxDim/Math.max(w,h));
+    const c=document.createElement('canvas');
+    c.width=Math.round(w*scale);c.height=Math.round(h*scale);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    cb(c.toDataURL('image/jpeg',.82));
+  };
+  img.onerror=()=>cb(dataUrl);
+  img.src=dataUrl;
+}
+function renderShots(){
+  const wrap=document.getElementById('f-shots');
+  wrap.innerHTML='';
+  formShots.forEach((s,i)=>{
+    const d=document.createElement('div');d.className='shot';
+    d.innerHTML=`<img src="${s.dataUrl}" alt="screenshot"/><button class="rm" title="Remove">✕</button>`;
+    d.querySelector('.rm').onclick=()=>{formShots.splice(i,1);renderShots()};
+    wrap.appendChild(d);
+  });
+}
+
+async function saveTrade(){
+  const date=document.getElementById('f-date').value;
+  const symbol=document.getElementById('f-symbol').value.trim().toUpperCase();
+  const pnlRaw=document.getElementById('f-pnl').value.trim();
+  const notes=document.getElementById('f-notes').value.trim();
+  if(!date)return toast('Pick a date ⚠️');
+  if(!state.outcome)return toast('Select Win, Loss or Breakeven ⚠️');
+  if(state.rules===null||state.rules===undefined)return toast('Did you follow your rules? ⚠️');
+
+  const imageIds=[];
+  for(const s of formShots){await imgPut(s.id,s.dataUrl);imageIds.push(s.id)}
+
+  const existing=editingId?trades.find(t=>t.id===editingId):null;
+  // clean up images removed during edit
+  if(existing)for(const old of (existing.images||[]))if(!imageIds.includes(old))await imgDel(old);
+
+  const trade={
+    id:editingId||uid(),
+    created:existing?existing.created:Date.now(),
+    updated:Date.now(),
+    date,symbol,
+    side:state.side,
+    outcome:state.outcome,
+    rules:state.rules,
+    pnl:pnlRaw===''?null:parseFloat(pnlRaw),
+    emotions:[...state.emotions],
+    notes,
+    images:imageIds,
+  };
+  if(trade.pnl!==null&&isNaN(trade.pnl))trade.pnl=null;
+  if(existing)trades[trades.indexOf(existing)]=trade;else trades.push(trade);
+  persist();
+  toast(existing?'Trade updated ✅':'Trade saved ✅');
+  resetForm();
+  go('dashboard');
+  queueSync();
+}
+
+/* =============== backup =============== */
+async function exportData(){
+  const images={};
+  for(const t of trades)for(const id of (t.images||[])){
+    const d=await imgGet(id);if(d)images[id]=d;
+  }
+  const blob=new Blob([JSON.stringify({app:'trading-journal',version:2,exported:new Date().toISOString(),trades,images})],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`trading-journal-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();URL.revokeObjectURL(a.href);
+  toast('Backup downloaded ⬇');
+}
+document.getElementById('import-file').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const data=JSON.parse(await f.text());
+    if(!Array.isArray(data.trades))throw 0;
+    let added=0;
+    for(const t of data.trades){
+      if(trades.some(x=>x.id===t.id))continue;
+      trades.push(t);added++;
+      for(const id of (t.images||[]))if(data.images&&data.images[id])await imgPut(id,data.images[id]);
+    }
+    persist();renderDashboard();renderTrades();
+    toast(added?`Imported ${added} trade${added===1?'':'s'} ✅`:'No new trades to import');
+    queueSync();
+  }catch(err){toast('Could not read that backup file ⚠️')}
+  e.target.value='';
+};
+async function wipeAll(){
+  if(!confirm('Delete ALL trades and screenshots on this device? This cannot be undone.'))return;
+  if(!confirm('Are you absolutely sure?'))return;
+  for(const t of trades){
+    tombstones[t.id]=Date.now();
+    for(const id of (t.images||[]))await imgDel(id);
+  }
+  persistTombstones();
+  trades=[];persist();renderDashboard();renderTrades();
+  toast('All data deleted');
+  queueSync();
+}
+
+/* =============== GitHub sync =============== */
+const SYNC_KEY='tj2_sync', DEL_KEY='tj2_deleted';
+let syncCfg=null; try{syncCfg=JSON.parse(localStorage.getItem(SYNC_KEY)||'null')}catch(e){}
+let tombstones={}; try{tombstones=JSON.parse(localStorage.getItem(DEL_KEY)||'{}')}catch(e){}
+function persistTombstones(){localStorage.setItem(DEL_KEY,JSON.stringify(tombstones))}
+
+const GH='https://api.github.com';
+function ghHeaders(extra){return{
+  'Authorization':'Bearer '+syncCfg.token,
+  'X-GitHub-Api-Version':'2022-11-28',
+  ...(extra||{})
+}}
+async function ghJson(path,opts={}){
+  const r=await fetch(GH+path,{...opts,headers:ghHeaders({'Accept':'application/vnd.github+json',...(opts.headers||{})})});
+  if(r.status===404)return null;
+  if(!r.ok)throw new Error('GitHub API '+r.status+' on '+path);
+  return r.json();
+}
+async function ghRaw(path){
+  const r=await fetch(GH+path,{headers:ghHeaders({'Accept':'application/vnd.github.raw'})});
+  if(r.status===404)return null;
+  if(!r.ok)throw new Error('GitHub API '+r.status+' on '+path);
+  return r.text();
+}
+const b64enc=s=>btoa(unescape(encodeURIComponent(s)));
+async function ghPut(path,content,sha){
+  const body={message:'journal sync',content:b64enc(content)};
+  if(sha)body.sha=sha;
+  const r=await fetch(`${GH}/repos/${syncCfg.owner}/${syncCfg.repo}/contents/${path}`,{
+    method:'PUT',headers:ghHeaders({'Accept':'application/vnd.github+json'}),body:JSON.stringify(body)
+  });
+  if(!r.ok)throw new Error('push failed ('+r.status+') on '+path);
+  return r.json();
+}
+async function ghDelete(path,sha){
+  try{await fetch(`${GH}/repos/${syncCfg.owner}/${syncCfg.repo}/contents/${path}`,{
+    method:'DELETE',headers:ghHeaders({'Accept':'application/vnd.github+json'}),
+    body:JSON.stringify({message:'journal cleanup',sha})
+  })}catch(e){}
+}
+
+async function connectSync(){
+  const token=document.getElementById('sync-token').value.trim();
+  const repo=(document.getElementById('sync-repo').value.trim()||'trading-journal-data');
+  if(!token)return toast('Paste your GitHub token first ⚠️');
+  const btn=document.getElementById('sync-connect-btn');
+  btn.disabled=true;btn.textContent='Connecting…';
+  try{
+    const u=await fetch(GH+'/user',{headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'}});
+    if(!u.ok)throw new Error('Token was rejected — check it was copied fully and has the repo scope.');
+    const user=await u.json();
+    syncCfg={token,owner:user.login,repo};
+    const existing=await ghJson(`/repos/${user.login}/${repo}`);
+    if(!existing){
+      const c=await fetch(GH+'/user/repos',{method:'POST',headers:ghHeaders({'Accept':'application/vnd.github+json'}),
+        body:JSON.stringify({name:repo,private:true,auto_init:true,description:'Trading journal data (auto-synced)'})});
+      if(!c.ok)throw new Error('Could not create the data repo ('+c.status+').');
+      toast('Created private repo '+repo+' 🔒');
+    }else if(!existing.private){
+      throw new Error('Repo '+repo+' exists but is PUBLIC — pick another name so your trades stay private.');
+    }
+    localStorage.setItem(SYNC_KEY,JSON.stringify(syncCfg));
+    document.getElementById('sync-token').value='';
+    renderSyncUI();
+    await syncNow();
+    toast('Sync connected ✅');
+  }catch(e){
+    syncCfg=null;
+    toast(e.message||'Could not connect ⚠️');
+  }
+  btn.disabled=false;btn.textContent='🔗 Connect';
+}
+function disconnectSync(){
+  if(!confirm('Disconnect sync on this device? Your trades stay here and in GitHub; this just stops syncing.'))return;
+  syncCfg=null;localStorage.removeItem(SYNC_KEY);renderSyncUI();
+}
+function renderSyncUI(){
+  document.getElementById('sync-setup').classList.toggle('hidden',!!syncCfg);
+  document.getElementById('sync-connected').classList.toggle('hidden',!syncCfg);
+  const note=document.getElementById('sidebar-sync-note');
+  if(syncCfg){
+    document.getElementById('sync-info').innerHTML=`Connected as <b>${esc(syncCfg.owner)}</b> → private repo <b>${esc(syncCfg.repo)}</b>`;
+    note.textContent='☁️ GitHub sync is on — phone & laptop share this journal.';
+  }else{
+    note.textContent='Connect GitHub sync in Sync & Backup to share your journal between phone & laptop.';
+  }
+}
+function setSyncStatus(kind,msg){
+  const el=document.getElementById('sync-status');if(!el)return;
+  if(kind==='syncing'){el.style.color='var(--amber)';el.textContent='⏳ Syncing…'}
+  else if(kind==='ok'){el.style.color='var(--green)';el.textContent='✓ Synced '+new Date().toLocaleTimeString()}
+  else if(kind==='error'){el.style.color='var(--red)';el.textContent='⚠ Sync problem: '+(msg||'check connection')}
+  else el.textContent='';
+}
+
+let syncing=false,syncQueued=false;
+function queueSync(){if(syncCfg)syncNow()}
+async function syncNow(){
+  if(!syncCfg)return;
+  if(syncing){syncQueued=true;return}
+  syncing=true;setSyncStatus('syncing');
+  try{await doSync()}
+  catch(e){
+    // one retry handles sha races when both devices push at once
+    try{await doSync()}catch(e2){setSyncStatus('error',e2.message);syncing=false;return}
+  }
+  setSyncStatus('ok');
+  syncing=false;
+  if(syncQueued){syncQueued=false;syncNow()}
+}
+const normalize=(ts,del)=>JSON.stringify({t:[...ts].sort((a,b)=>a.id<b.id?-1:1),d:del});
+async function doSync(){
+  const base=`/repos/${syncCfg.owner}/${syncCfg.repo}/contents`;
+  const rootList=await ghJson(base+'/')||[];
+  const dataEntry=rootList.find(f=>f.name==='data.json');
+  let remote={trades:[],deleted:{}};
+  if(dataEntry){
+    try{remote=JSON.parse(await ghRaw(base+'/data.json'))||remote}catch(e){}
+  }
+  // merge tombstones (newest wins), drop ones older than 90 days
+  const del={...(remote.deleted||{})};
+  for(const[id,ts]of Object.entries(tombstones))del[id]=Math.max(del[id]||0,ts);
+  const cutoff=Date.now()-90*24*3600*1000;
+  for(const id in del)if(del[id]<cutoff)delete del[id];
+  // merge trades by id, newer `updated` wins, tombstones beat older edits
+  const byId={};
+  for(const t of[...(remote.trades||[]),...trades]){
+    if(!t||!t.id)continue;
+    const stamp=t.updated||t.created||0;
+    const prev=byId[t.id];
+    if(!prev||stamp>(prev.updated||prev.created||0))byId[t.id]=t;
+  }
+  const merged=Object.values(byId)
+    .filter(t=>!(del[t.id]&&del[t.id]>=(t.updated||t.created||0)));
+  // adopt merge locally
+  const changedLocally=normalize(merged,del)!==normalize(trades,tombstones);
+  trades=merged;tombstones=del;persist();persistTombstones();
+  // images: pull ones we're missing, push ones GitHub is missing, prune orphans
+  let imgList=[];try{imgList=await ghJson(base+'/images')||[]}catch(e){}
+  const remoteImgs=new Map(imgList.map(f=>[f.name,f.sha]));
+  const needed=new Set();
+  for(const t of merged)for(const id of(t.images||[]))needed.add(id);
+  for(const id of needed){
+    const local=await imgGet(id);
+    if(!local&&remoteImgs.has(id)){
+      const d=await ghRaw(base+'/images/'+id);
+      if(d)await imgPut(id,d);
+    }else if(local&&!remoteImgs.has(id)){
+      await ghPut('images/'+id,local);
+    }
+  }
+  for(const[name,sha]of remoteImgs)if(!needed.has(name))await ghDelete('images/'+name,sha);
+  // push merged data if it differs from what GitHub has
+  const payload=normalizePayload(merged,del);
+  const remotePayload=dataEntry?normalizePayload(remote.trades||[],remote.deleted||{}):null;
+  if(payload!==remotePayload)await ghPut('data.json',payload,dataEntry?.sha);
+  if(changedLocally){renderDashboard();renderTrades()}
+}
+function normalizePayload(ts,del){
+  return JSON.stringify({app:'trading-journal',version:2,
+    trades:[...ts].sort((a,b)=>a.id<b.id?-1:1),deleted:del},null,1);
+}
+// re-sync when you come back to the tab (e.g. switching phone → laptop)
+let lastFocusSync=0;
+window.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&syncCfg&&Date.now()-lastFocusSync>30000){
+    lastFocusSync=Date.now();syncNow();
+  }
+});
+
+/* =============== misc =============== */
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+let toastTimer=null;
+function toast(msg){
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const t=document.createElement('div');t.className='toast';t.textContent=msg;
+  document.body.appendChild(t);
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.remove(),2600);
+}
+
+/* init */
+resetForm();
+renderDashboard();
+renderSyncUI();
+if(syncCfg)syncNow();
+</script>
+</body>
+</html>
