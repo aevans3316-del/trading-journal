@@ -1048,6 +1048,23 @@ async function ghPut(path,content,sha){
   if(!r.ok)throw new Error('push failed ('+r.status+') on '+path);
   return r.json();
 }
+// accurate, single-call file listing (contents-API listings can lag behind pushes)
+async function ghTree(){
+  const t=await ghJson(`/repos/${syncCfg.owner}/${syncCfg.repo}/git/trees/HEAD?recursive=1`);
+  const map=new Map();
+  if(t&&t.tree)for(const e of t.tree)if(e.type==='blob')map.set(e.path,e.sha);
+  return map;
+}
+// upload that self-heals: if GitHub says the file already exists (422) or our
+// sha is stale (409), fetch the current sha and retry as an update
+async function ghPutSafe(path,content,sha){
+  try{await ghPut(path,content,sha)}
+  catch(e){
+    const fresh=(await ghTree()).get(path);
+    if(fresh===undefined||fresh===sha)throw e;
+    await ghPut(path,content,fresh);
+  }
+}
 async function ghDelete(path,sha){
   try{await fetch(`${GH}/repos/${syncCfg.owner}/${syncCfg.repo}/contents/${path}`,{
     method:'DELETE',headers:ghHeaders({'Accept':'application/vnd.github+json'}),
@@ -1127,10 +1144,10 @@ async function syncNow(){
 const normalize=(ts,del)=>JSON.stringify({t:[...ts].sort((a,b)=>a.id<b.id?-1:1),d:del});
 async function doSync(){
   const base=`/repos/${syncCfg.owner}/${syncCfg.repo}/contents`;
-  const rootList=await ghJson(base+'/')||[];
-  const dataEntry=rootList.find(f=>f.name==='data.json');
+  const tree=await ghTree();
+  const dataSha=tree.get('data.json');
   let remote={trades:[],deleted:{}};
-  if(dataEntry){
+  if(dataSha){
     try{remote=JSON.parse(await ghRaw(base+'/data.json'))||remote}catch(e){}
   }
   // merge tombstones (newest wins), drop ones older than 90 days
@@ -1152,8 +1169,8 @@ async function doSync(){
   const changedLocally=normalize(merged,del)!==normalize(trades,tombstones);
   trades=merged;tombstones=del;persist();persistTombstones();
   // images: pull ones we're missing, push ones GitHub is missing, prune orphans
-  let imgList=[];try{imgList=await ghJson(base+'/images')||[]}catch(e){}
-  const remoteImgs=new Map(imgList.map(f=>[f.name,f.sha]));
+  const remoteImgs=new Map();
+  for(const[p,sha]of tree)if(p.startsWith('images/'))remoteImgs.set(p.slice(7),sha);
   const needed=new Set();
   for(const t of merged)for(const id of(t.images||[]))needed.add(id);
   for(const id of needed){
@@ -1162,14 +1179,14 @@ async function doSync(){
       const d=await ghRaw(base+'/images/'+id);
       if(d)await imgPut(id,d);
     }else if(local&&!remoteImgs.has(id)){
-      await ghPut('images/'+id,local);
+      await ghPutSafe('images/'+id,local);
     }
   }
   for(const[name,sha]of remoteImgs)if(!needed.has(name))await ghDelete('images/'+name,sha);
   // push merged data if it differs from what GitHub has
   const payload=normalizePayload(merged,del);
-  const remotePayload=dataEntry?normalizePayload(remote.trades||[],remote.deleted||{}):null;
-  if(payload!==remotePayload)await ghPut('data.json',payload,dataEntry?.sha);
+  const remotePayload=dataSha?normalizePayload(remote.trades||[],remote.deleted||{}):null;
+  if(payload!==remotePayload)await ghPutSafe('data.json',payload,dataSha);
   if(changedLocally){renderDashboard();renderTrades();if(!document.getElementById('view-calendar').classList.contains('hidden'))renderCalendar()}
 }
 function normalizePayload(ts,del){
