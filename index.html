@@ -388,7 +388,8 @@ textarea{resize:vertical;min-height:110px;line-height:1.55}
           </div>
           <div class="field">
             <label>P&amp;L ($) <span style="text-transform:none;font-weight:500">— optional</span></label>
-            <input type="number" id="f-pnl" step="any" inputmode="decimal" placeholder="e.g. 245 or -120"/>
+            <input type="number" id="f-pnl" step="any" inputmode="decimal" placeholder="e.g. 245"/>
+            <div style="font-size:11.5px;color:var(--dim);margin-top:6px">Just the amount — picking Loss automatically counts it as negative.</div>
           </div>
         </div>
 
@@ -963,6 +964,11 @@ async function saveTrade(){
     images:imageIds,
   };
   if(trade.pnl!==null&&isNaN(trade.pnl))trade.pnl=null;
+  // the Win/Loss choice controls the sign — losses count negative no matter how they're typed
+  if(trade.pnl!==null){
+    if(trade.outcome==='loss')trade.pnl=-Math.abs(trade.pnl);
+    if(trade.outcome==='win')trade.pnl=Math.abs(trade.pnl);
+  }
   if(existing)trades[trades.indexOf(existing)]=trade;else trades.push(trade);
   persist();
   toast(existing?'Trade updated ✅':'Trade saved ✅');
@@ -1212,6 +1218,14 @@ function toast(msg){
 }
 
 /* init */
+// repair trades saved before sign enforcement (losses typed as positive numbers)
+let signFixes=0;
+for(const t of trades){
+  if(typeof t.pnl!=='number')continue;
+  const want=t.outcome==='loss'?-Math.abs(t.pnl):t.outcome==='win'?Math.abs(t.pnl):t.pnl;
+  if(want!==t.pnl){t.pnl=want;t.updated=Date.now();signFixes++}
+}
+if(signFixes){persist();toast(`Fixed P&L sign on ${signFixes} trade${signFixes===1?'':'s'} ✅`)}
 resetForm();
 renderDashboard();
 renderSyncUI();
